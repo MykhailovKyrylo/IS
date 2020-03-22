@@ -510,8 +510,7 @@ public class Board extends JPanel implements ActionListener {
         int x = (int) (Math.random() * N_BLOCKS);
         int y = (int) (Math.random() * N_BLOCKS);
 
-        while ( (screenData[convertToRawIndex(new Pair<>(x, y))] & 16) == 0 || x == 0 || y == 0) {
-            System.out.println(new Pair<>(x, y));
+        while ( (screenData[convertToRawIndex(new Pair<>(x, y))] & 16) == 0 || (x == 0 && y == 0)) {
             x = (int) (Math.random() * N_BLOCKS);
             y = (int) (Math.random() * N_BLOCKS);
         }
