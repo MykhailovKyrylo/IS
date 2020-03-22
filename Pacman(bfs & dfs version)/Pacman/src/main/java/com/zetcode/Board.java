@@ -1,7 +1,5 @@
 package com.zetcode;
 
-import javafx.util.Pair;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -24,6 +22,52 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 
 public class Board extends JPanel implements ActionListener {
+
+    public class Pair<A, B> {
+        private A first;
+        private B second;
+
+        public Pair(A first, B second) {
+            super();
+            this.first = first;
+            this.second = second;
+        }
+
+        public int hashCode() {
+            int hashFirst = first != null ? first.hashCode() : 0;
+            int hashSecond = second != null ? second.hashCode() : 0;
+
+            return (hashFirst + hashSecond) * hashSecond + hashFirst;
+        }
+
+        public boolean equals(Object other) {
+            if (other instanceof Pair) {
+                Pair otherPair = (Pair) other;
+                return
+                        ((  this.first == otherPair.first ||
+                                ( this.first != null && otherPair.first != null &&
+                                        this.first.equals(otherPair.first))) &&
+                                (  this.second == otherPair.second ||
+                                        ( this.second != null && otherPair.second != null &&
+                                                this.second.equals(otherPair.second))) );
+            }
+
+            return false;
+        }
+
+        public String toString()
+        {
+            return "(" + first + ", " + second + ")";
+        }
+
+        public A getFirst() {
+            return first;
+        }
+
+        public B getSecond() {
+            return second;
+        }
+    }
 
     private Dimension d;
     private final Font smallFont = new Font("Helvetica", Font.BOLD, 14);
@@ -384,8 +428,8 @@ public class Board extends JPanel implements ActionListener {
     }
 
     private int convertToRawIndex(Pair<Integer, Integer> position) {
-        final int x = position.getKey();
-        final int y = position.getValue();
+        final int x = position.getFirst();
+        final int y = position.getSecond();
         final int pos = x + N_BLOCKS * y;
         return pos;
     }
@@ -396,16 +440,16 @@ public class Board extends JPanel implements ActionListener {
     }
 
     private Boolean isValidCell(Pair<Integer, Integer> position) {
-        return (position.getKey() >= 0 && position.getKey() < N_BLOCKS &&
-                position.getValue() >= 0 && position.getValue() < N_BLOCKS);
+        return (position.getFirst() >= 0 && position.getFirst() < N_BLOCKS &&
+                position.getSecond() >= 0 && position.getSecond() < N_BLOCKS);
     }
 
     private List<Pair<Pair<Integer, Integer>, Direction>> getNeightboursCells(Pair<Integer, Integer> current_position) {
         List<Pair<Pair<Integer, Integer>, Direction>> result = new ArrayList<>();
 
         for (Direction direction : AllDirections) {
-            Pair<Integer, Integer> position = new Pair<>(current_position.getKey() + direction.dx,
-                                                         current_position.getValue() + direction.dy);
+            Pair<Integer, Integer> position = new Pair<>(current_position.getFirst() + direction.dx,
+                                                         current_position.getSecond() + direction.dy);
             if (isValidCell(position)) {
                 result.add(new Pair<>(position, direction));
             }
@@ -453,23 +497,23 @@ public class Board extends JPanel implements ActionListener {
 
         while (!bfs.isEmpty()) {
             Pair<Integer, Integer> current_position = bfs.remove();
-            int min_distance = distance.get(current_position).getKey();
+            int min_distance = distance.get(current_position).getFirst();
 
             List<Pair<Pair<Integer, Integer>, Direction>> neightbours = getNeightboursCells(current_position);
 
             for (Pair<Pair<Integer, Integer>, Direction> neightbour : neightbours) {
-                if (isAvailableCell(neightbour.getKey())) {
-                    if (distance.containsKey(neightbour.getKey())) {
-                        int current_min_distance = distance.get(neightbour.getKey()).getKey();
+                if (isAvailableCell(neightbour.getFirst())) {
+                    if (distance.containsKey(neightbour.getFirst())) {
+                        int current_min_distance = distance.get(neightbour.getFirst()).getFirst();
                         if (current_min_distance > min_distance + 1) {
-                            distance.put(neightbour.getKey(), new Pair<>(min_distance + 1, current_position));
-                            bfs.add(neightbour.getKey());
-                            dx_dy.put(neightbour.getKey(), getOppositeDirection(neightbour.getValue()));
+                            distance.put(neightbour.getFirst(), new Pair<>(min_distance + 1, current_position));
+                            bfs.add(neightbour.getFirst());
+                            dx_dy.put(neightbour.getFirst(), getOppositeDirection(neightbour.getSecond()));
                         }
                     } else {
-                        distance.put(neightbour.getKey(), new Pair<>(min_distance + 1, current_position));
-                        bfs.add(neightbour.getKey());
-                        dx_dy.put(neightbour.getKey(), getOppositeDirection(neightbour.getValue()));
+                        distance.put(neightbour.getFirst(), new Pair<>(min_distance + 1, current_position));
+                        bfs.add(neightbour.getFirst());
+                        dx_dy.put(neightbour.getFirst(), getOppositeDirection(neightbour.getSecond()));
                     }
                 }
             }
@@ -495,11 +539,11 @@ public class Board extends JPanel implements ActionListener {
             List<Pair<Pair<Integer, Integer>, Direction>> neightbours = getNeightboursCells(current_position);
 
             for (Pair<Pair<Integer, Integer>, Direction> neightbour : neightbours) {
-                if (isAvailableCell(neightbour.getKey())) {
-                    if (!distance.containsKey(neightbour.getKey())) {
-                        distance.put(neightbour.getKey(), current_position);
-                        bfs.add(neightbour.getKey());
-                        dx_dy.put(neightbour.getKey(), getOppositeDirection(neightbour.getValue()));
+                if (isAvailableCell(neightbour.getFirst())) {
+                    if (!distance.containsKey(neightbour.getFirst())) {
+                        distance.put(neightbour.getFirst(), current_position);
+                        bfs.add(neightbour.getFirst());
+                        dx_dy.put(neightbour.getFirst(), getOppositeDirection(neightbour.getSecond()));
                     }
                 }
             }

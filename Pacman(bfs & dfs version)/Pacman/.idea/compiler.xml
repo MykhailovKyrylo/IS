@@ -10,7 +10,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="Pacman" target="1.11" />
+      <module name="Pacman" target="11" />
     </bytecodeTargetLevel>
   </component>
 </project>
