@@ -1,7 +1,7 @@
 # IS
-## Pacman(bfs & dfs version)
+## Pacman
 Requires Java 11 or higher
-## Run options:
+## Run options: (same for each project)
 ## Runnable jar file
 extract Pacman-1.0-SNAPSHOT.jar file from the archive
 open terminal in folder with Pacman-1.0-SNAPSHOT.jar
