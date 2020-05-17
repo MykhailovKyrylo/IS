@@ -14,16 +14,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
-import static java.lang.Math.min;
+import static java.lang.Math.*;
 
 class Position {
     Position() {
@@ -118,29 +115,33 @@ public class Board extends JPanel implements ActionListener {
             Direction.DOWN
     );
 
+    final short BLANK = 0;
+    final short VISITED = 2;
+    final short POINT = 1;
+    final short BL = 228; // block
     private final short levelData[] = {
-            19, 26, 26, 26, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 22,
-            21, 0, 0, 0, 17, 16, 16, 16, 16, 16, 16, 16, 16, 16, 20,
-            21, 0, 0, 0, 17, 16, 16, 16, 16, 16, 16, 16, 16, 16, 20,
-            21, 0, 0, 0, 17, 16, 16, 24, 16, 16, 16, 16, 16, 16, 20,
-            17, 18, 18, 18, 16, 16, 20, 0, 17, 16, 16, 16, 16, 16, 20,
-            17, 16, 16, 16, 16, 16, 20, 0, 17, 16, 16, 16, 16, 24, 20,
-            25, 16, 16, 16, 24, 24, 28, 0, 25, 24, 24, 16, 20, 0, 21,
-            1, 17, 16, 20, 0, 0, 0, 0, 0, 0, 0, 17, 20, 0, 21,
-            1, 17, 16, 16, 18, 18, 22, 0, 19, 18, 18, 16, 20, 0, 21,
-            1, 17, 16, 16, 16, 16, 20, 0, 17, 16, 16, 16, 20, 0, 21,
-            1, 17, 16, 16, 16, 16, 20, 0, 17, 16, 16, 16, 20, 0, 21,
-            1, 17, 16, 16, 16, 16, 16, 18, 16, 16, 16, 16, 20, 0, 21,
-            1, 17, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 20, 0, 21,
-            1, 25, 24, 24, 24, 24, 24, 24, 24, 24, 16, 16, 16, 18, 20,
-            9, 8, 8, 8, 8, 8, 8, 8, 8, 8, 25, 24, 24, 24, 28
+            1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1,  1,  1,  1,
+            1,  BL, BL, BL, 1,  1,  1, 1,  1,  1,  1,  1,  1,  1,  1,
+            1,  BL, BL, BL, 1,  1,  1, 1,  1,  1,  1,  1,  1,  1,  1,
+            1,  BL, BL, BL, 1,  1,  1, 1,  1,  1,  1,  1,  1,  1,  1,
+            1,  1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
+            BL, 1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
+            BL, 1,  1,  1, BL, BL, BL, BL, BL, BL, BL, 1,  1, BL,  1,
+            BL, 1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
+            BL, 1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
+            BL, 1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
+            BL, 1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1, BL,  1,
+            BL, 1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1, BL,  1,
+            BL, 1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1, BL,  1,
+            BL, 1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1,  1,  1,
+            BL, BL, BL, BL, BL, BL, BL, 1, 1,  1,  1,  1,  1,  1,  1
     };
 
     private final int validSpeeds[] = {1, 2, 3, 4, 6, 8};
     private final int maxSpeed = 6;
 
     private int currentSpeed = 3;
-    private short[] screenData;
+    private short[] screenData, mazeData;
     private Timer timer;
 
     public Board() {
@@ -168,7 +169,7 @@ public class Board extends JPanel implements ActionListener {
 
     private boolean isAvailableCell(Position position) {
         final short ch = screenData[convertToRawIndex(position)];
-        return ((ch & 16) != 0);
+        return (ch != BL);
     }
 
     private Boolean isValidCell(Position position) {
@@ -223,6 +224,7 @@ public class Board extends JPanel implements ActionListener {
     private void initVariables() {
 
         screenData = new short[N_BLOCKS * N_BLOCKS];
+        mazeData = new short[N_BLOCKS * N_BLOCKS];
         mazeColor = new Color(5, 100, 5);
         d = new Dimension(400, 400);
         ghost_x = new int[MAX_GHOSTS];
@@ -311,7 +313,7 @@ public class Board extends JPanel implements ActionListener {
 
         while (i < N_BLOCKS * N_BLOCKS && finished) {
 
-            if ((screenData[i] & 48) != 0) {
+            if (screenData[i] == POINT) {
                 finished = false;
             }
 
@@ -346,18 +348,12 @@ public class Board extends JPanel implements ActionListener {
     }
 
     private Direction getBestGhostDirection(Position ghost_position, Position pacman_position) {
-//        System.out.println("Ghost pos = " + ghost_position.x + " " + ghost_position.y);
-
         final int dist = distance[convertToRawIndex(ghost_position)][convertToRawIndex(pacman_position)];
-
-//        System.out.println(dist);
 
         for (Direction direction : AllDirections) {
             Position neighbour = new Position(ghost_position.x + direction.getDx(), ghost_position.y + direction.getDy());
 
             if (!isValidCell(neighbour)) continue;
-
-//            System.out.println("Ghost neigh = " + neighbour.x + " " + neighbour.y);
 
             if (distance[convertToRawIndex(neighbour)][convertToRawIndex(pacman_position)] == dist - 1) {
                 return direction;
@@ -379,54 +375,6 @@ public class Board extends JPanel implements ActionListener {
                 Direction ghost_direction = getBestGhostDirection(ghost_pos, pacman_pos);
                 ghost_dx[i] = ghost_direction.getDx();
                 ghost_dy[i] = ghost_direction.getDy();
-
-//                count = 0;
-//
-//                if ((screenData[pos] & 1) == 0 && ghost_dx[i] != 1) {
-//                    dx[count] = -1;
-//                    dy[count] = 0;
-//                    count++;
-//                }
-//
-//                if ((screenData[pos] & 2) == 0 && ghost_dy[i] != 1) {
-//                    dx[count] = 0;
-//                    dy[count] = -1;
-//                    count++;
-//                }
-//
-//                if ((screenData[pos] & 4) == 0 && ghost_dx[i] != -1) {
-//                    dx[count] = 1;
-//                    dy[count] = 0;
-//                    count++;
-//                }
-//
-//                if ((screenData[pos] & 8) == 0 && ghost_dy[i] != -1) {
-//                    dx[count] = 0;
-//                    dy[count] = 1;
-//                    count++;
-//                }
-//
-//                if (count == 0) {
-//
-//                    if ((screenData[pos] & 15) == 15) {
-//                        ghost_dx[i] = 0;
-//                        ghost_dy[i] = 0;
-//                    } else {
-//                        ghost_dx[i] = -ghost_dx[i];
-//                        ghost_dy[i] = -ghost_dy[i];
-//                    }
-//
-//                } else {
-//
-//                    count = (int) (Math.random() * count);
-//
-//                    if (count > 3) {
-//                        count = 3;
-//                    }
-//
-//                    ghost_dx[i] = dx[count];
-//                    ghost_dy[i] = dy[count];
-//                }
             }
 
             ghost_x[i] = ghost_x[i] + (ghost_dx[i] * ghostSpeed[i]);
@@ -447,6 +395,67 @@ public class Board extends JPanel implements ActionListener {
         g2d.drawImage(ghost, x, y, this);
     }
 
+    class Move {
+        Move(Direction direction, int score) {
+            this.direction = direction;
+            this.score = score;
+        }
+        Direction direction;
+        int score;
+    }
+
+    private Move getBestPacmanDirection(Position position, short[] local_screen_data, int moves) {
+        if (moves == 0) {
+            return new Move(Direction.DEFAULT, 0);
+        }
+
+        int local_score = 0;
+
+        final int position_idx = convertToRawIndex(position);
+        final short position_local_screen_data = screenData[position_idx];
+
+        if (position_local_screen_data == POINT) {
+            local_score += pow(2, moves);
+        }
+        local_screen_data[position_idx] = BLANK;
+
+        int dist_to_ghost = INF;
+        for (int i = 0; i < N_GHOSTS; i++) {
+            final Position ghost_position = new Position(ghost_x[i] / BLOCK_SIZE, ghost_y[i] / BLOCK_SIZE);
+
+            dist_to_ghost = min(dist_to_ghost, distance[convertToRawIndex(position)][convertToRawIndex(ghost_position)]);
+        }
+
+        if (dist_to_ghost <= 1) {
+            local_score -= 200;
+        }
+
+        Move best_move = new Move(Direction.DEFAULT, -INF);
+
+        for (Direction direction : AllDirections) {
+            Position neighbour = new Position(position.x + direction.getDx(), position.y + direction.getDy());
+
+            if (!isValidCell(neighbour) || !isAvailableCell(neighbour)) continue;
+
+            Move neighbour_best_move = getBestPacmanDirection(neighbour, local_screen_data, moves - 1);
+            if (neighbour_best_move.score >= best_move.score) {
+                best_move.direction = direction;
+                best_move.score = neighbour_best_move.score;
+            }
+        }
+
+        local_screen_data[position_idx] = position_local_screen_data;
+        best_move.score += local_score;
+
+        return best_move;
+    }
+
+    private Direction getBestPacmanDirection(Position pacman_position) {
+        final int MOVES_COUNT = 5;
+
+        return getBestPacmanDirection(pacman_position, screenData, MOVES_COUNT).direction;
+    }
+
     private void movePacman() {
 
         int pos;
@@ -461,33 +470,21 @@ public class Board extends JPanel implements ActionListener {
 
         if (pacman_x % BLOCK_SIZE == 0 && pacman_y % BLOCK_SIZE == 0) {
             pos = pacman_x / BLOCK_SIZE + N_BLOCKS * (int) (pacman_y / BLOCK_SIZE);
-            ch = screenData[pos];
 
-            if ((ch & 16) != 0) {
-                screenData[pos] = (short) (ch & 15);
+            if (screenData[pos] == POINT) {
+                mazeData[pos] = (short) (mazeData[pos] & 15);
                 score++;
             }
+            screenData[pos] = BLANK;
 
-            if (req_dx != 0 || req_dy != 0) {
-                if (!((req_dx == -1 && req_dy == 0 && (ch & 1) != 0)
-                        || (req_dx == 1 && req_dy == 0 && (ch & 4) != 0)
-                        || (req_dx == 0 && req_dy == -1 && (ch & 2) != 0)
-                        || (req_dx == 0 && req_dy == 1 && (ch & 8) != 0))) {
-                    pacmand_x = req_dx;
-                    pacmand_y = req_dy;
-                    view_dx = pacmand_x;
-                    view_dy = pacmand_y;
-                }
-            }
+            Position pacman_pos = new Position(pacman_x / BLOCK_SIZE, pacman_y / BLOCK_SIZE);
 
-            // Check for standstill
-            if ((pacmand_x == -1 && pacmand_y == 0 && (ch & 1) != 0)
-                    || (pacmand_x == 1 && pacmand_y == 0 && (ch & 4) != 0)
-                    || (pacmand_x == 0 && pacmand_y == -1 && (ch & 2) != 0)
-                    || (pacmand_x == 0 && pacmand_y == 1 && (ch & 8) != 0)) {
-                pacmand_x = 0;
-                pacmand_y = 0;
-            }
+            Direction pacman_direction = getBestPacmanDirection(pacman_pos);
+
+            pacmand_x = pacman_direction.getDx();
+            pacmand_y = pacman_direction.getDy();
+            view_dx = pacmand_x;
+            view_dy = pacmand_y;
         }
         pacman_x = pacman_x + PACMAN_SPEED * pacmand_x;
         pacman_y = pacman_y + PACMAN_SPEED * pacmand_y;
@@ -589,25 +586,23 @@ public class Board extends JPanel implements ActionListener {
                 g2d.setColor(mazeColor);
                 g2d.setStroke(new BasicStroke(2));
 
-                if ((screenData[i] & 1) != 0) {
+                if ((mazeData[i] & 1) != 0) {
                     g2d.drawLine(x, y, x, y + BLOCK_SIZE - 1);
                 }
 
-                if ((screenData[i] & 2) != 0) {
+                if ((mazeData[i] & 2) != 0) {
                     g2d.drawLine(x, y, x + BLOCK_SIZE - 1, y);
                 }
 
-                if ((screenData[i] & 4) != 0) {
-                    g2d.drawLine(x + BLOCK_SIZE - 1, y, x + BLOCK_SIZE - 1,
-                            y + BLOCK_SIZE - 1);
+                if ((mazeData[i] & 4) != 0) {
+                    g2d.drawLine(x + BLOCK_SIZE - 1, y + BLOCK_SIZE - 1, x+ BLOCK_SIZE - 1, y);
                 }
 
-                if ((screenData[i] & 8) != 0) {
-                    g2d.drawLine(x, y + BLOCK_SIZE - 1, x + BLOCK_SIZE - 1,
-                            y + BLOCK_SIZE - 1);
+                if ((mazeData[i] & 8) != 0) {
+                    g2d.drawLine(x+ BLOCK_SIZE - 1, y+ BLOCK_SIZE - 1, x, y+ BLOCK_SIZE - 1);
                 }
 
-                if ((screenData[i] & 16) != 0) {
+                if ((mazeData[i] & 16) != 0) {
                     g2d.setColor(dotColor);
                     g2d.fillRect(x + 11, y + 11, 2, 2);
                 }
@@ -626,6 +621,46 @@ public class Board extends JPanel implements ActionListener {
         currentSpeed = 3;
     }
 
+    private void fillMazeData() {
+        for (int row = 0; row < N_BLOCKS; row++) {
+            for (int col = 0; col < N_BLOCKS; col++) {
+                final int pos_idx = convertToRawIndex(new Position(col, row));
+
+                if (screenData[pos_idx] != POINT) continue;
+
+                mazeData[pos_idx] |= 16;
+
+                {// check left
+                    Position position = new Position(col + Direction.LEFT.getDx(), row + Direction.LEFT.getDy());
+                    if (isValidCell(position) && !isAvailableCell(position)) {
+                        mazeData[pos_idx] |= 1;
+                    }
+                }
+
+                {// check up
+                    Position position = new Position(col + Direction.UP.getDx(), row + Direction.UP.getDy());
+                    if (isValidCell(position) && !isAvailableCell(position)) {
+                        mazeData[pos_idx] |= 2;
+                    }
+                }
+
+                {// check right
+                    Position position = new Position(col + Direction.RIGHT.getDx(), row + Direction.RIGHT.getDy());
+                    if (isValidCell(position) && !isAvailableCell(position)) {
+                        mazeData[pos_idx] |= 4;
+                    }
+                }
+
+                {// check down
+                    Position position = new Position(col + Direction.DOWN.getDx(), row + Direction.DOWN.getDy());
+                    if (isValidCell(position) && !isAvailableCell(position)) {
+                        mazeData[pos_idx] |= 8;
+                    }
+                }
+            }
+        }
+    }
+
     private void initLevel() {
 
         int i;
@@ -633,6 +668,7 @@ public class Board extends JPanel implements ActionListener {
             screenData[i] = levelData[i];
         }
 
+        fillMazeData();
         buildGraph();
         continueLevel();
     }
