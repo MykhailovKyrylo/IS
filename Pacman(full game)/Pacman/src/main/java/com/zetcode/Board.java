@@ -14,10 +14,37 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.Timer;
+
+import static java.lang.Math.min;
+
+class Position {
+    Position() {
+        this.x = -1;
+        this.y = -1;
+    }
+
+    Position(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public boolean equals(Position other) {
+        if (other == this) return true;
+
+        return this.x == other.x && this.y == other.y;
+    }
+
+    public Integer x;
+    public Integer y;
+}
 
 public class Board extends JPanel implements ActionListener {
 
@@ -33,6 +60,8 @@ public class Board extends JPanel implements ActionListener {
 
     private final int BLOCK_SIZE = 24;
     private final int N_BLOCKS = 15;
+    private final int INF = 100000000;
+    private final int NODES_COUNT = N_BLOCKS * N_BLOCKS;
     private final int SCREEN_SIZE = N_BLOCKS * BLOCK_SIZE;
     private final int PAC_ANIM_DELAY = 2;
     private final int PACMAN_ANIM_COUNT = 4;
@@ -54,6 +83,40 @@ public class Board extends JPanel implements ActionListener {
 
     private int pacman_x, pacman_y, pacmand_x, pacmand_y;
     private int req_dx, req_dy, view_dx, view_dy;
+
+    private enum Direction {
+
+        LEFT(-1, 0),
+        RIGHT(1, 0),
+        UP(0, -1),
+        DOWN(0, 1),
+        DEFAULT(0, 0);
+
+        private final Integer dx;
+        private final Integer dy;
+
+        Direction(Integer dx_, Integer dy_) {
+            this.dx = dx_;
+            this.dy = dy_;
+        }
+
+        public Integer getDx() {
+            return dx;
+        }
+
+        public Integer getDy() {
+            return dy;
+        }
+    }
+
+    private int[][] distance = new int[NODES_COUNT][NODES_COUNT];
+
+    private final List<Direction> AllDirections = Arrays.asList(
+            Direction.LEFT,
+            Direction.RIGHT,
+            Direction.UP,
+            Direction.DOWN
+    );
 
     private final short levelData[] = {
             19, 26, 26, 26, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 22,
@@ -94,6 +157,67 @@ public class Board extends JPanel implements ActionListener {
         setFocusable(true);
 
         setBackground(Color.black);
+    }
+
+    private int convertToRawIndex(Position position) {
+        final int x = position.x;
+        final int y = position.y;
+        final int pos = x + N_BLOCKS * y;
+        return pos;
+    }
+
+    private boolean isAvailableCell(Position position) {
+        final short ch = screenData[convertToRawIndex(position)];
+        return ((ch & 16) != 0);
+    }
+
+    private Boolean isValidCell(Position position) {
+        return (position.x >= 0 && position.x < N_BLOCKS &&
+                position.y >= 0 && position.y < N_BLOCKS);
+    }
+
+    private void buildGraph() {
+        { // mem set distance
+            for (int row_from = 0; row_from < N_BLOCKS; row_from++) {
+                for (int col_from = 0; col_from < N_BLOCKS; col_from++) {
+                    Position from = new Position(col_from, row_from);
+
+                    for (int row_to = 0; row_to < N_BLOCKS; row_to++) {
+                        for (int col_to = 0; col_to < N_BLOCKS; col_to++) {
+                            Position to = new Position(col_to, row_to);
+
+                            final int dist = (from.equals(to)) ? 0 : INF;
+
+                            distance[convertToRawIndex(from)][convertToRawIndex(to)] = dist;
+                            distance[convertToRawIndex(to)][convertToRawIndex(from)] = dist;
+                        }
+                    }
+
+                    if (!isAvailableCell(from)) continue;
+
+                    for (Direction direction : AllDirections) {
+                        Position to = new Position(from.x + direction.getDx(), from.y + direction.getDy());
+
+                        if (isValidCell(to) && isAvailableCell(to)) {
+                            distance[convertToRawIndex(from)][convertToRawIndex(to)] = 1;
+                            distance[convertToRawIndex(to)][convertToRawIndex(from)] = 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        {// floyd_warshall_algorithm
+            for (int k = 0; k < NODES_COUNT; k++) {
+                for (int i = 0; i < NODES_COUNT; i++) {
+                    for (int j = 0; j < NODES_COUNT; j++) {
+                        if (distance[i][k] < INF && distance[k][j] < INF) {
+                            distance[i][j] = min(distance[i][j], distance[i][k] + distance[k][j]);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private void initVariables() {
@@ -221,64 +345,88 @@ public class Board extends JPanel implements ActionListener {
         continueLevel();
     }
 
+    private Direction getBestGhostDirection(Position ghost_position, Position pacman_position) {
+//        System.out.println("Ghost pos = " + ghost_position.x + " " + ghost_position.y);
+
+        final int dist = distance[convertToRawIndex(ghost_position)][convertToRawIndex(pacman_position)];
+
+//        System.out.println(dist);
+
+        for (Direction direction : AllDirections) {
+            Position neighbour = new Position(ghost_position.x + direction.getDx(), ghost_position.y + direction.getDy());
+
+            if (!isValidCell(neighbour)) continue;
+
+//            System.out.println("Ghost neigh = " + neighbour.x + " " + neighbour.y);
+
+            if (distance[convertToRawIndex(neighbour)][convertToRawIndex(pacman_position)] == dist - 1) {
+                return direction;
+            }
+        }
+
+        return Direction.DEFAULT;
+    }
+
     private void moveGhosts(Graphics2D g2d) {
 
         short i;
-        int pos;
-        int count;
 
         for (i = 0; i < N_GHOSTS; i++) {
             if (ghost_x[i] % BLOCK_SIZE == 0 && ghost_y[i] % BLOCK_SIZE == 0) {
-                pos = ghost_x[i] / BLOCK_SIZE + N_BLOCKS * (int) (ghost_y[i] / BLOCK_SIZE);
+                Position ghost_pos = new Position(ghost_x[i] / BLOCK_SIZE, (ghost_y[i] / BLOCK_SIZE));
+                Position pacman_pos = new Position(pacman_x / BLOCK_SIZE,  (pacman_y / BLOCK_SIZE));
 
-                count = 0;
+                Direction ghost_direction = getBestGhostDirection(ghost_pos, pacman_pos);
+                ghost_dx[i] = ghost_direction.getDx();
+                ghost_dy[i] = ghost_direction.getDy();
 
-                if ((screenData[pos] & 1) == 0 && ghost_dx[i] != 1) {
-                    dx[count] = -1;
-                    dy[count] = 0;
-                    count++;
-                }
-
-                if ((screenData[pos] & 2) == 0 && ghost_dy[i] != 1) {
-                    dx[count] = 0;
-                    dy[count] = -1;
-                    count++;
-                }
-
-                if ((screenData[pos] & 4) == 0 && ghost_dx[i] != -1) {
-                    dx[count] = 1;
-                    dy[count] = 0;
-                    count++;
-                }
-
-                if ((screenData[pos] & 8) == 0 && ghost_dy[i] != -1) {
-                    dx[count] = 0;
-                    dy[count] = 1;
-                    count++;
-                }
-
-                if (count == 0) {
-
-                    if ((screenData[pos] & 15) == 15) {
-                        ghost_dx[i] = 0;
-                        ghost_dy[i] = 0;
-                    } else {
-                        ghost_dx[i] = -ghost_dx[i];
-                        ghost_dy[i] = -ghost_dy[i];
-                    }
-
-                } else {
-
-                    count = (int) (Math.random() * count);
-
-                    if (count > 3) {
-                        count = 3;
-                    }
-
-                    ghost_dx[i] = dx[count];
-                    ghost_dy[i] = dy[count];
-                }
-
+//                count = 0;
+//
+//                if ((screenData[pos] & 1) == 0 && ghost_dx[i] != 1) {
+//                    dx[count] = -1;
+//                    dy[count] = 0;
+//                    count++;
+//                }
+//
+//                if ((screenData[pos] & 2) == 0 && ghost_dy[i] != 1) {
+//                    dx[count] = 0;
+//                    dy[count] = -1;
+//                    count++;
+//                }
+//
+//                if ((screenData[pos] & 4) == 0 && ghost_dx[i] != -1) {
+//                    dx[count] = 1;
+//                    dy[count] = 0;
+//                    count++;
+//                }
+//
+//                if ((screenData[pos] & 8) == 0 && ghost_dy[i] != -1) {
+//                    dx[count] = 0;
+//                    dy[count] = 1;
+//                    count++;
+//                }
+//
+//                if (count == 0) {
+//
+//                    if ((screenData[pos] & 15) == 15) {
+//                        ghost_dx[i] = 0;
+//                        ghost_dy[i] = 0;
+//                    } else {
+//                        ghost_dx[i] = -ghost_dx[i];
+//                        ghost_dy[i] = -ghost_dy[i];
+//                    }
+//
+//                } else {
+//
+//                    count = (int) (Math.random() * count);
+//
+//                    if (count > 3) {
+//                        count = 3;
+//                    }
+//
+//                    ghost_dx[i] = dx[count];
+//                    ghost_dy[i] = dy[count];
+//                }
             }
 
             ghost_x[i] = ghost_x[i] + (ghost_dx[i] * ghostSpeed[i]);
@@ -485,6 +633,7 @@ public class Board extends JPanel implements ActionListener {
             screenData[i] = levelData[i];
         }
 
+        buildGraph();
         continueLevel();
     }
 
