@@ -108,6 +108,11 @@ public class Board extends JPanel implements ActionListener {
 
     private int[][] distance = new int[NODES_COUNT][NODES_COUNT];
 
+    private final int MAX_VISIT_SCORE = 7;
+    final int MOVES_PRECALC_COUNT = 5;
+    private int step_count;
+    private int[] last_visit;
+
     private final List<Direction> AllDirections = Arrays.asList(
             Direction.LEFT,
             Direction.RIGHT,
@@ -223,7 +228,9 @@ public class Board extends JPanel implements ActionListener {
 
     private void initVariables() {
 
+        step_count = MAX_VISIT_SCORE;
         screenData = new short[N_BLOCKS * N_BLOCKS];
+        last_visit = new int[N_BLOCKS * N_BLOCKS];
         mazeData = new short[N_BLOCKS * N_BLOCKS];
         mazeColor = new Color(5, 100, 5);
         d = new Dimension(400, 400);
@@ -404,7 +411,7 @@ public class Board extends JPanel implements ActionListener {
         int score;
     }
 
-    private Move getBestPacmanDirection(Position position, short[] local_screen_data, int moves) {
+    private Move getBestPacmanDirection(Position position, short[] local_screen_data, int[] local_last_visit, int moves) {
         if (moves == 0) {
             return new Move(Direction.DEFAULT, 0);
         }
@@ -413,10 +420,19 @@ public class Board extends JPanel implements ActionListener {
 
         final int position_idx = convertToRawIndex(position);
         final short position_local_screen_data = screenData[position_idx];
+        final int position_local_last_visit = local_last_visit[position_idx];
 
         if (position_local_screen_data == POINT) {
             local_score += pow(2, moves);
         }
+
+        final int local_step_count = step_count + (MOVES_PRECALC_COUNT - moves);
+        final int last_visit_benefit = (local_step_count - position_local_last_visit);
+        if (last_visit_benefit >= MOVES_PRECALC_COUNT) {
+            local_score += last_visit_benefit;
+        }
+        local_last_visit[position_idx] = local_step_count;
+
         local_screen_data[position_idx] = BLANK;
 
         int dist_to_ghost = INF;
@@ -427,17 +443,17 @@ public class Board extends JPanel implements ActionListener {
         }
 
         if (dist_to_ghost <= 1) {
-            local_score -= 200;
+            local_score -= 5000;
         }
 
-        Move best_move = new Move(Direction.DEFAULT, -INF);
+        Move best_move = new Move(Direction.DEFAULT, 0);
 
         for (Direction direction : AllDirections) {
             Position neighbour = new Position(position.x + direction.getDx(), position.y + direction.getDy());
 
             if (!isValidCell(neighbour) || !isAvailableCell(neighbour)) continue;
 
-            Move neighbour_best_move = getBestPacmanDirection(neighbour, local_screen_data, moves - 1);
+            Move neighbour_best_move = getBestPacmanDirection(neighbour, local_screen_data, local_last_visit, moves - 1);
             if (neighbour_best_move.score >= best_move.score) {
                 best_move.direction = direction;
                 best_move.score = neighbour_best_move.score;
@@ -445,15 +461,15 @@ public class Board extends JPanel implements ActionListener {
         }
 
         local_screen_data[position_idx] = position_local_screen_data;
+        local_last_visit[position_idx] = position_local_last_visit;
         best_move.score += local_score;
 
         return best_move;
     }
 
     private Direction getBestPacmanDirection(Position pacman_position) {
-        final int MOVES_COUNT = 5;
 
-        return getBestPacmanDirection(pacman_position, screenData, MOVES_COUNT).direction;
+        return getBestPacmanDirection(pacman_position, screenData, last_visit, MOVES_PRECALC_COUNT).direction;
     }
 
     private void movePacman() {
@@ -469,12 +485,15 @@ public class Board extends JPanel implements ActionListener {
         }
 
         if (pacman_x % BLOCK_SIZE == 0 && pacman_y % BLOCK_SIZE == 0) {
+            step_count++;
             pos = pacman_x / BLOCK_SIZE + N_BLOCKS * (int) (pacman_y / BLOCK_SIZE);
 
             if (screenData[pos] == POINT) {
                 mazeData[pos] = (short) (mazeData[pos] & 15);
                 score++;
             }
+            last_visit[pos] = step_count;
+            step_count++;
             screenData[pos] = BLANK;
 
             Position pacman_pos = new Position(pacman_x / BLOCK_SIZE, pacman_y / BLOCK_SIZE);
@@ -665,6 +684,7 @@ public class Board extends JPanel implements ActionListener {
 
         int i;
         for (i = 0; i < N_BLOCKS * N_BLOCKS; i++) {
+            last_visit[i] = 0;
             screenData[i] = levelData[i];
         }
 
