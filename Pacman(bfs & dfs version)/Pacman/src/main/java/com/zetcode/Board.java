@@ -281,10 +281,10 @@ public class Board extends JPanel implements ActionListener {
             view_dy = pacmand_y;
 
             // Check for standstill
-            if ((pacmand_x == -1 && pacmand_y == 0 && (ch & 1) != 0)
-                    || (pacmand_x == 1 && pacmand_y == 0 && (ch & 4) != 0)
-                    || (pacmand_x == 0 && pacmand_y == -1 && (ch & 2) != 0)
-                    || (pacmand_x == 0 && pacmand_y == 1 && (ch & 8) != 0)) {
+            if ((pacmand_x == -1 && pacmand_y == 0 && (ch & 1) != 0) // ch & 1 - lefy wall
+                    || (pacmand_x == 1 && pacmand_y == 0 && (ch & 4) != 0) // ch & 4 - right wall
+                    || (pacmand_x == 0 && pacmand_y == -1 && (ch & 2) != 0) // ch & 2 - up wall
+                    || (pacmand_x == 0 && pacmand_y == 1 && (ch & 8) != 0)) { // ch & 8 - down wall
                 pacmand_x = 0;
                 pacmand_y = 0;
             }
