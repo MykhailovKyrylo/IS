@@ -8,6 +8,7 @@
 #include <numeric>
 
 #include "university_data.h"
+#include "Solution.h"
 
 const int INF = std::numeric_limits<int>::max();
 
@@ -104,24 +105,8 @@ int main()
 {
 
   auto university = createTarasShevchenkoNationUniversity();
+  university.construct_lessons();
 
-  enum DAYS{
-	  monday,
-	  tuesday,
-	  wednesday,
-	  thursday,
-	  friday,
-	  DAYS_COUNT
-  };
-
-  enum LESSON{
-	  first,
-	  second,
-	  third,
-	  fourth,
-	  fifth,
-	  LESSONS_COUNT
-  };
 
   return 0;
 }
