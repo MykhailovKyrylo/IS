@@ -56,7 +56,7 @@ public class Board extends JPanel implements ActionListener {
     private boolean dying = false;
 
     private final int BLOCK_SIZE = 24;
-    private final int N_BLOCKS = 15;
+    private final int N_BLOCKS = 28;
     private final int INF = 100000000;
     private final int NODES_COUNT = N_BLOCKS * N_BLOCKS;
     private final int SCREEN_SIZE = N_BLOCKS * BLOCK_SIZE;
@@ -109,7 +109,7 @@ public class Board extends JPanel implements ActionListener {
     private int[][] distance = new int[NODES_COUNT][NODES_COUNT];
 
     private final int MAX_VISIT_SCORE = 7;
-    final int MOVES_PRECALC_COUNT = 5;
+    final int MOVES_PRECALC_COUNT = 12;
     private int step_count;
     private int[] last_visit;
 
@@ -125,21 +125,34 @@ public class Board extends JPanel implements ActionListener {
     final short POINT = 1;
     final short BL = 228; // block
     private final short levelData[] = {
-            1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1,  1,  1,  1,
-            1,  BL, BL, BL, 1,  1,  1, 1,  1,  1,  1,  1,  1,  1,  1,
-            1,  BL, BL, BL, 1,  1,  1, 1,  1,  1,  1,  1,  1,  1,  1,
-            1,  BL, BL, BL, 1,  1,  1, 1,  1,  1,  1,  1,  1,  1,  1,
-            1,  1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
-            BL, 1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
-            BL, 1,  1,  1, BL, BL, BL, BL, BL, BL, BL, 1,  1, BL,  1,
-            BL, 1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
-            BL, 1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
-            BL, 1,  1,  1,  1,  1,  1, BL, 1,  1,  1,  1,  1, BL,  1,
-            BL, 1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1, BL,  1,
-            BL, 1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1, BL,  1,
-            BL, 1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1, BL,  1,
-            BL, 1,  1,  1,  1,  1,  1,  1, 1,  1,  1,  1,  1,  1,  1,
-            BL, BL, BL, BL, BL, BL, BL, 1, 1,  1,  1,  1,  1,  1,  1
+            1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, BL, BL,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+            1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1,
+            1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1,
+            1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1,
+            1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+            1, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL,  1,
+            1, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL,  1,
+            1,  1,  1,  1,  1,  1,  1, BL, BL,  1,  1,  1,  1, BL, BL,  1,  1,  1,  1, BL, BL,  1,  1,  1,  1,  1,  1,  1,
+           BL, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL, BL,
+           BL, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL, BL,
+           BL, BL, BL, BL, BL, BL,  1, BL, BL,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL,
+           BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL,  1,  1, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL,
+            1,  1,  1,  1,  1,  1,  1,  1,  1,  1, BL,  1,  1,  1,  1,  1,  1, BL,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+           BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL,
+           BL, BL, BL, BL, BL, BL,  1, BL, BL,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL,
+           BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL,
+           BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL,
+            1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, BL, BL,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
+            1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1,
+            1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL,  1, BL, BL, BL, BL, BL,  1,
+            1,  1,  1,  1, BL, BL,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, BL, BL,  1,  1,  1,  1,
+           BL, BL,  1,  1, BL, BL,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, BL, BL,  1,  1, BL, BL,
+           BL, BL,  1,  1, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL,  1,  1, BL, BL,
+            1,  1,  1,  1,  1,  1,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL, BL, BL,  1, BL, BL,  1,  1,  1,  1,  1,  1,  1,
+            1,  1,  1,  1,  1,  1,  1, BL, BL,  1,  1,  1,  1, BL, BL,  1,  1,  1,  1, BL, BL,  1,  1,  1,  1,  1,  1,  1,
+            1, BL, BL, BL, BL, BL, BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL, BL, BL, BL, BL, BL,  1,
+            1, BL, BL, BL, BL, BL, BL, BL, BL, BL, BL, BL,  1, BL, BL,  1, BL, BL, BL, BL, BL, BL, BL, BL, BL, BL, BL,  1,
+            1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1
     };
 
     private final int validSpeeds[] = {1, 2, 3, 4, 6, 8};
@@ -701,8 +714,8 @@ public class Board extends JPanel implements ActionListener {
 
         for (i = 0; i < N_GHOSTS; i++) {
 
-            ghost_y[i] = 4 * BLOCK_SIZE;
-            ghost_x[i] = 4 * BLOCK_SIZE;
+            ghost_y[i] = 12 * BLOCK_SIZE;
+            ghost_x[i] = 14 * BLOCK_SIZE;
             ghost_dy[i] = 0;
             ghost_dx[i] = dx;
             dx = -dx;
@@ -715,8 +728,8 @@ public class Board extends JPanel implements ActionListener {
             ghostSpeed[i] = validSpeeds[random];
         }
 
-        pacman_x = 7 * BLOCK_SIZE;
-        pacman_y = 11 * BLOCK_SIZE;
+        pacman_x = 14 * BLOCK_SIZE;
+        pacman_y = 20 * BLOCK_SIZE;
         pacmand_x = 0;
         pacmand_y = 0;
         req_dx = 0;
