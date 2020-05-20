@@ -3,111 +3,106 @@
 //
 
 #include "university.h"
+#include "random_utils.h"
 
 #include <algorithm>
-#include <random>
 
-university::university(std::string&& name_)
-	: univerversity_name(name_)
-{};
+university::university(std::string&& univerversity_name) : name(univerversity_name) {};
 
-void university::add_teacher(const name& teacher_name, teacher_data&& teacher_data)
-{
-  teachers.insert({teacher_name, teacher_data});
+void university::add_teacher(id teacher_id, teacher_data&& teacher_data) {
+    teachers.insert({teacher_id, std::move(teacher_data)});
 }
 
-void university::add_discipline(const name& discipline_name, discipline_data&& discipline_data)
-{
-  disciplines.insert({discipline_name, discipline_data});
+void university::add_discipline(id discipline_id, discipline_data&& discipline_data) {
+    disciplines.insert({discipline_id, std::move(discipline_data)});
 }
 
-void university::add_classroom(const name& classroom_name, classroom_data&& classroom_data)
-{
-  classrooms.insert({classroom_name, classroom_data});
+void university::add_classroom(id classroom_id, classroom_data&& classroom_data) {
+    classrooms.insert({classroom_id, classroom_data});
 }
 
-void university::add_group(const name& group_name, group_data&& group_data)
-{
-  groups.insert({group_name, group_data});
+void university::add_group(id group_id, group_data&& group_data) {
+    groups.insert({group_id, std::move(group_data)});
 }
 
-const teachers& university::getTeachers() const
-{
-  return teachers;
+const teacher_data& university::get_teacher(id teacher_id) const {
+    return teachers.at(teacher_id);
 }
 
-const disciplines& university::getDisciplines() const
-{
-  return disciplines;
+const discipline_data& university::get_discipline(id discipline_id) const {
+    return disciplines.at(discipline_id);
 }
 
-const classrooms& university::getClassrooms() const
-{
-  return classrooms;
+const classroom_data& university::get_classroom(id classroom_id) const {
+    return classrooms.at(classroom_id);
 }
 
-const groups& university::getGroups() const
-{
-  return groups;
+const group_data& university::get_group(id group_id) const {
+    return groups.at(group_id);
 }
 
-const std::vector<Lesson>& university::getLessons() const
-{
-  return lessons;
+id university::get_random_classroom(uint16_t capacity) const {
+    id random_classroom_id = -1;
+    for (const auto&[classroom_id, classroom_data] : classrooms) {
+        if (classroom_data.capacity < capacity) continue;
+
+        if (random_classroom_id == -1) {
+            random_classroom_id = classroom_id;
+            continue;
+        }
+
+        if (random_bool()) {
+            random_classroom_id = classroom_id;
+        }
+    }
+
+    assert(random_classroom_id != -1);
+
+    return random_classroom_id;
 }
 
-void university::construct_lessons()
-{
-  lessons.reserve(get_lessons_count());
-
-  for (const auto&[group_name, group_data] : groups)
-  {
-	for (const auto& discipline_it : group_data.disciplines)
-	{
-	  const std::string discipline_name = discipline_it->first;
-	  const auto discipline_data = discipline_it->second;
-
-	  for (size_t lecture_number = 0; lecture_number < discipline_data.lectures_count_per_week; lecture_number++)
-	  {
-		Lesson lecture = {group_name, discipline_name, false};
-		lessons.push_back(std::move(lecture));
-	  }
-
-	  for (size_t practice_number = 0; practice_number < discipline_data.practice_count_per_week; practice_number++)
-	  {
-		Lesson practice = {group_name, discipline_name, true};
-		lessons.push_back(std::move(practice));
-	  }
-	}
-  }
-
-  std::random_device rd;
-  std::mt19937 g(rd());
-
-  std::shuffle(lessons.begin(), lessons.end(), g);
+id university::get_random_practice_teacher(id discipline_id) const {
+    const auto& practice_teachers = disciplines.at(discipline_id).practice_teachers;
+    return *select_randomly(practice_teachers.begin(), practice_teachers.end());
 }
 
-size_t university::get_lessons_count() const
-{
-  size_t lessons_count = 0;
-  for (const auto&[_, discipline_data] : disciplines)
-  {
-	lessons_count += discipline_data.get_lessons_count();
-  }
-
-  return lessons_count;
+id university::get_lecturer(id discipline_id) const {
+    return disciplines.at(discipline_id).lecturer;
 }
 
-size_t discipline_data::get_lessons_count() const
-{
-  return lectures_count_per_week + practice_count_per_week;
+id university::get_teacher_rank(id teacher_id) const {
+    return teachers.at(teacher_id).rank_id;
 }
 
-size_t group_data::get_lessons_count() const
-{
-  size_t lessong_count = 0;
-  for (const auto& discipline : disciplines)
-  {
-	lessong_count += discipline->second.get_lessons_count();
-  }
+lesson_data university::get_lesson(size_t lesson_idx) const {
+    return lessons[lesson_idx];
+}
+
+void university::construct_lessons() {
+    for (const auto&[group_id, group_data] : groups) {
+        for (auto discipline_id : group_data.disciplines) {
+
+            const auto discipline_data = get_discipline(discipline_id);
+
+            for (size_t lecture_idx = 0; lecture_idx < discipline_data.lectures_count_per_week; lecture_idx++) {
+                lesson_data lecture = {group_id, discipline_id, false};
+                lessons.push_back(lecture);
+            }
+
+            for (size_t practice_idx = 0; practice_idx < discipline_data.practice_count_per_week; practice_idx++) {
+                lesson_data practice = {group_id, discipline_id, true};
+                lessons.push_back(practice);
+            }
+        }
+    }
+
+    // TODO(me) : check if I need shuffle here
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    std::shuffle(lessons.begin(), lessons.end(), g);
+}
+
+size_t university::get_lessons_count() const {
+    return lessons.size();
 }

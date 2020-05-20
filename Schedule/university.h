@@ -5,79 +5,69 @@
 #pragma once
 
 #include <string>
-#include <list>
-#include <map>
-#include <iterator>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 #include <cstdint>
-#include  <random>
-#include  <iterator>
 
-using name = std::string;
+using id = size_t;
 
 struct teacher_data {
-	std::string rank;
+    id rank_id;
 };
-using teachers = std::map<name, teacher_data>;
-using teacher_it = teachers::const_iterator;
 
 struct discipline_data {
-	uint16_t lectures_count_per_week;
-	uint16_t practice_count_per_week;
-	teacher_it lecturer;
-	std::vector<teacher_it> practice_teachers;
-	size_t get_lessons_count() const;
+    uint16_t lectures_count_per_week;
+    uint16_t practice_count_per_week;
+    id lecturer;
+    std::vector<id> practice_teachers;
 };
-using disciplines = std::map<name, discipline_data>;
-using discipline_it = disciplines::const_iterator;
 
 struct classroom_data {
-	uint16_t capacity;
+    uint16_t capacity;
 };
-using classrooms = std::map<name, classroom_data>;
-using classroom_it = classrooms::const_iterator;
 
 struct group_data {
-	uint16_t students_count;
-	std::vector<discipline_it> disciplines;
-	size_t get_lessons_count() const;
+    uint16_t students_count;
+    std::vector<id> disciplines;
 };
-using groups = std::map<name, group_data>;
-using group_it = groups::const_iterator;
 
-struct Lesson {
-	std::string group;
-	std::string discipline;
-	bool is_practice;
+struct lesson_data {
+    id group_id;
+    id discipline_id;
+    bool is_practice;
 };
 
 class university {
- public:
-  explicit university(std::string&& name_);
+  public:
+    explicit university(std::string&& university_name);
 
-  void construct_lessons();
+    void construct_lessons();
 
-  void add_teacher(const name& teacher_name, teacher_data&& teacher_data);
-  void add_discipline(const name& discipline_name, discipline_data&& discipline_data);
-  void add_classroom(const name& classroom_name, classroom_data&& classroom_data);
-  void add_group(const name& group_name, group_data&& group_data);
+    void add_teacher(id teacher_id, teacher_data&& teacher_data);
+    void add_discipline(id discipline_id, discipline_data&& discipline_data);
+    void add_classroom(id classroom_id, classroom_data&& classroom_data);
+    void add_group(id group_id, group_data&& group_data);
 
-  const teachers& getTeachers() const;
-  const disciplines& getDisciplines() const;
-  const classrooms& getClassrooms() const;
-  const groups& getGroups() const;
-  const std::vector<Lesson>& getLessons() const;
+    const teacher_data& get_teacher(id teacher_id) const;
+    const discipline_data& get_discipline(id discipline_id) const;
+    const classroom_data& get_classroom(id classroom_id) const;
+    const group_data& get_group(id group_id) const;
 
-  size_t get_lessons_count() const;
- private:
-  name univerversity_name;
-  teachers teachers;
-  disciplines disciplines;
-  classrooms classrooms;
-  groups groups;
+    id get_random_classroom(uint16_t capacity) const;
+    id get_random_practice_teacher(id discipline_id) const;
+    id get_lecturer(id discipline_id) const;
+    id get_teacher_rank(id teacher_id) const;
 
-  std::vector<Lesson> lessons;
+    lesson_data get_lesson(size_t lesson_idx) const;
+    size_t get_lessons_count() const;
+  private:
+    std::string name;
+    std::unordered_map<id, teacher_data> teachers;
+    std::unordered_map<id, discipline_data> disciplines;
+    std::unordered_map<id, classroom_data> classrooms;
+    std::unordered_map<id, group_data> groups;
+
+    std::vector<lesson_data> lessons;
 };
 
 

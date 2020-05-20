@@ -3,110 +3,136 @@
 //
 
 #include <iostream>
-#include <vector>
-#include <map>
-#include <numeric>
 
 #include "university_data.h"
-#include "Solution.h"
+#include "solution.h"
 
-const int INF = std::numeric_limits<int>::max();
+using namespace university_data;
 
-university createTarasShevchenkoNationUniversity()
-{
-  university university("Taras Shevchenko Nation University");
+constexpr size_t MAX_ITERATION_COUNT = 200; // 1'000'000
 
-  { // adding teachers
-	using namespace university_data::teachers;
+university create_university() {
+    university knu("Taras Shevchenko Nation University");
 
-	university.add_teacher(names::KEK, {rank::PROFESSOR});
-	university.add_teacher(names::LOL, {rank::DOCTOR});
-	university.add_teacher(names::HEH, {rank::ASSOCIATE_PROFESSOR});
-	university.add_teacher(names::AHAH, {rank::GRADUATE_STUDENT});
-  }
+    { // adding teachers
+        knu.add_teacher(TEACHERS::KEK, {RANKS::PROFESSOR});
+        knu.add_teacher(TEACHERS::LOL, {RANKS::DOCTOR});
+        knu.add_teacher(TEACHERS::HEH, {RANKS::ASSOCIATE_PROFESSOR});
+        knu.add_teacher(TEACHERS::AHAH, {RANKS::GRADUATE_STUDENT});
+    }
 
-  { // adding classrooms
-	using namespace university_data::classrooms;
+    { // adding classrooms
+        knu.add_classroom(CLASSROOMS::N_101, {15});
+        knu.add_classroom(CLASSROOMS::N_102, {15});
+        knu.add_classroom(CLASSROOMS::N_103, {15});
+        knu.add_classroom(CLASSROOMS::N_201, {30});
+        knu.add_classroom(CLASSROOMS::N_202, {30});
+        knu.add_classroom(CLASSROOMS::N_203, {30});
+        knu.add_classroom(CLASSROOMS::N_301, {120});
+        knu.add_classroom(CLASSROOMS::N_302, {120});
+        knu.add_classroom(CLASSROOMS::N_303, {120});
+    }
 
-	university.add_classroom(N_101, {15});
-	university.add_classroom(N_102, {15});
-	university.add_classroom(N_103, {15});
-	university.add_classroom(N_201, {30});
-	university.add_classroom(N_202, {30});
-	university.add_classroom(N_203, {30});
-	university.add_classroom(N_301, {120});
-	university.add_classroom(N_302, {120});
-	university.add_classroom(N_303, {120});
-  }
+    { // adding disciplines
+        {
+            discipline_data discipline;
+            discipline.lectures_count_per_week = 1;
+            discipline.practice_count_per_week = 2;
+            discipline.lecturer = TEACHERS::KEK;
+            discipline.practice_teachers = {
+                TEACHERS::KEK,
+                TEACHERS::LOL
+            };
 
-  { // adding disciplines
-	using namespace university_data::teachers;
-	using namespace university_data::disciplines;
+            knu.add_discipline(DISCIPLINES::PROGRAMMING_0, std::move(discipline));
+        }
 
-	{
-	  discipline_data discipline;
-	  discipline.lectures_count_per_week = 1;
-	  discipline.practice_count_per_week = 2;
-	  discipline.lecturer = university.getTeachers().find(names::KEK);
-	  discipline.practice_teachers = {
-		  university.getTeachers().find(names::KEK),
-		  university.getTeachers().find(names::LOL)
-	  };
+        {
+            discipline_data discipline;
+            discipline.lectures_count_per_week = 1;
+            discipline.practice_count_per_week = 2;
+            discipline.lecturer = TEACHERS::HEH;
+            discipline.practice_teachers = {
+                TEACHERS::HEH,
+                TEACHERS::AHAH
+            };
 
-	  university.add_discipline(PROGRAMMING_0, std::move(discipline));
-	}
+            knu.add_discipline(DISCIPLINES::PROGRAMMING_1, std::move(discipline));
+        }
+    }
 
-	{
-	  discipline_data discipline;
-	  discipline.lectures_count_per_week = 1;
-	  discipline.practice_count_per_week = 2;
-	  discipline.lecturer = university.getTeachers().find(names::HEH);
-	  discipline.practice_teachers = {
-		  university.getTeachers().find(names::HEH),
-		  university.getTeachers().find(names::AHAH)
-	  };
+    { // adding groups
+        {
+            group_data group;
+            group.students_count = 32;
+            group.disciplines = {
+                DISCIPLINES::PROGRAMMING_0,
+                DISCIPLINES::PROGRAMMING_1
+            };
 
-	  university.add_discipline(PROGRAMMING_1, std::move(discipline));
-	}
-  }
+            knu.add_group(GROUPS::TTP_42, std::move(group));
+        };
 
-  { // adding groups
-	using namespace university_data::groups;
-	using namespace university_data::disciplines;
+        {
+            group_data group;
+            group.students_count = 20;
+            group.disciplines = {
+                DISCIPLINES::PROGRAMMING_0,
+                DISCIPLINES::PROGRAMMING_1
+            };
 
-	{
-	  group_data group;
-	  group.students_count = 32;
-	  group.disciplines = {
-		  university.getDisciplines().find(PROGRAMMING_0),
-		  university.getDisciplines().find(PROGRAMMING_1)
-	  };
+            knu.add_group(GROUPS::MI_4, std::move(group));
+        };
 
-	  university.add_group(TTP_42, std::move(group));
-	};
+    }
 
-	{
-	  group_data group;
-	  group.students_count = 20;
-	  group.disciplines = {
-		  university.getDisciplines().find(PROGRAMMING_0),
-		  university.getDisciplines().find(PROGRAMMING_1)
-	  };
+    knu.construct_lessons();
 
-	  university.add_group(MI_4, std::move(group));
-	};
-
-  }
-
-  return university;
+    return knu;
 }
 
-int main()
-{
+void print_chromosome(const chromosome& chromosome, const university& university) {
+    for (size_t lesson_idx = 0; lesson_idx < chromosome.scheduled_lessons.size(); lesson_idx++) {
+        auto lesson_data = university.get_lesson(lesson_idx);
+        auto scheduled_lesson = chromosome.scheduled_lessons[lesson_idx];
+        auto teacher_id = scheduled_lesson.teacher_id;
+        auto classroom_id = scheduled_lesson.classroom_id;
+        auto lesson_type = (lesson_data.is_practice) ? "Practice" : "Lecture";
 
-  auto university = createTarasShevchenkoNationUniversity();
-  university.construct_lessons();
+        std::cout << "Scheduled lesson #" << lesson_idx << '\n';
+        std::cout << GROUPS_NAMES[lesson_data.group_id];
+        std::cout << " (" << university.get_group(lesson_data.group_id).students_count << " students) ";
+        std::cout << DISCIPLINES_NAMES[lesson_data.discipline_id] << '\n';
+        std::cout << lesson_type << " with " << RANKS_NAMES[university.get_teacher_rank(teacher_id)] << ' ';
+        std::cout << TEACHERS_NAMES[teacher_id] << '\n';
+        std::cout << DAYS_NAMES[scheduled_lesson.day_idx] << ' ' << PARA_NAMES[scheduled_lesson.para_idx] << " lesson\n";
+        std::cout << "In " << CLASSROOMS_NAMES[classroom_id];
+        std::cout <<" (capacity = " << university.get_classroom(classroom_id).capacity << ")\n";
+        std::cout << '\n';
+    }
+}
 
+void print_population(const population& population, const university& university) {
+    size_t chromosomes_count = 0;
+    for (const auto& chromosome : population.chromosomes) {
+        std::cout << "Chromosome #" << chromosomes_count++ << '\n';
+        print_chromosome(chromosome, university);
+        std::cout << '\n';
+    }
+}
 
-  return 0;
+int main() {
+
+    auto university = create_university();
+
+    auto population = population::construct_randomly(university);
+
+    print_population(population, university);
+
+//  int iteration_count = 0;
+//  while (!population.is_valid() && iteration_count < MAX_ITERATION_COUNT) {
+//    population.make_step();
+//  }
+
+    return 0;
 }

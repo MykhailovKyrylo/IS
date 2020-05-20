@@ -4,75 +4,129 @@
 
 #pragma once
 
-#include <string>
-#include <map>
-
 #include "university.h"
 
-namespace university_data
-{
+#include <string>
 
-namespace teachers
-{
+enum DAYS {
+    monday,
+    tuesday,
+    wednesday,
+    thursday,
+    friday,
+    DAYS_COUNT
+};
 
-namespace names
-{
+enum PARA {
+    first,
+    second,
+    third,
+    fourth,
+    fifth,
+    PARA_COUNT
+};
 
-const std::string KEK = "Kek";
-const std::string LOL = "Lol";
-const std::string HEH = "Heh";
-const std::string AHAH = "Ahah";
+const std::string DAYS_NAMES[DAYS_COUNT] {
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday"
+};
 
-} // names
+const std::string PARA_NAMES[PARA_COUNT] {
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth"
+};
 
-namespace rank
-{
+namespace university_data {
 
-const std::string PROFESSOR = "professor";
-const std::string DOCTOR = "doctor";
-const std::string ASSOCIATE_PROFESSOR = "associate professor";
-const std::string GRADUATE_STUDENT = "graduate student";
+    enum TEACHERS {
+        KEK,
+        LOL,
+        HEH,
+        AHAH,
+        TEACHERS_COUNT
+    };
 
-} // rank
+    enum RANKS {
+        PROFESSOR,
+        DOCTOR,
+        ASSOCIATE_PROFESSOR,
+        GRADUATE_STUDENT,
+        RANKS_COUNT
+    };
 
-} // teachers
+    enum CLASSROOMS {
+        N_101,
+        N_102,
+        N_103,
+        N_201,
+        N_202,
+        N_203,
+        N_301,
+        N_302,
+        N_303,
+        CLASSROOMS_COUNT
+    };
 
-namespace classrooms
-{
+    enum DISCIPLINES {
+        PROGRAMMING_0,
+        PROGRAMMING_1,
+        OTHER_0,
+        OTHER_1,
+        OTHER_2,
+        DISCIPLINES_COUNT
+    };
 
-const std::string N_101 = "101";
-const std::string N_102 = "102";
-const std::string N_103 = "103";
+    enum GROUPS {
+        TTP_42,
+        MI_4,
+        TK4,
+        GROUPS_COUNT
+    };
 
-const std::string N_201 = "201";
-const std::string N_202 = "202";
-const std::string N_203 = "203";
+    const std::string TEACHERS_NAMES[TEACHERS_COUNT] {
+        "KEK",
+        "LOL",
+        "HEH",
+        "AHAH"
+    };
 
-const std::string N_301 = "301";
-const std::string N_302 = "302";
-const std::string N_303 = "303";
+    const std::string RANKS_NAMES[RANKS_COUNT] {
+        "PROFESSOR",
+        "DOCTOR",
+        "ASSOCIATE_PROFESSOR",
+        "GRADUATE_STUDENT"
+    };
 
-} // classrooms
+    const std::string CLASSROOMS_NAMES[CLASSROOMS_COUNT] {
+        "N_101",
+        "N_102",
+        "N_103",
+        "N_201",
+        "N_202",
+        "N_203",
+        "N_301",
+        "N_302",
+        "N_303"
+    };
 
-namespace disciplines
-{
+    const std::string DISCIPLINES_NAMES[DISCIPLINES_COUNT] {
+        "PROGRAMMING_0",
+        "PROGRAMMING_1",
+        "OTHER_0",
+        "OTHER_1",
+        "OTHER_2"
+    };
 
-const std::string PROGRAMMING_0 = "programming0";
-const std::string PROGRAMMING_1 = "programming1";
-
-const std::string OTHER_0 = "other0";
-const std::string OTHER_1 = "other1";
-const std::string OTHER_2 = "other2";
-
-} // disciplines
-
-namespace groups
-{
-
-const std::string TTP_42 = "TTP42";
-const std::string MI_4 = "MI4";
-const std::string TK4 = "TK4";
-
-}
+    const std::string GROUPS_NAMES[GROUPS_COUNT] {
+        "TTP_42",
+        "MI_4",
+        "TK4"
+    };
 
 } // university_data
