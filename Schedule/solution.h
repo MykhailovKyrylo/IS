@@ -42,11 +42,12 @@ struct population {
 
     population();
 
-    void add(chromosome&& chromosome);
-    void selection(const university& university);
     bool is_valid() const;
+    int get_mismatches_count() const;
     const chromosome& get_valid_chromosome() const;
-    const std::vector<chromosome> get_chromosomes;
+
+    void add(chromosome&& chromosome);
+    population selection(const university& university);
 
     std::vector<chromosome> chromosomes;
 };

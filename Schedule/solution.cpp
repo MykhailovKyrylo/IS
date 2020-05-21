@@ -205,13 +205,14 @@ population::population() {
     chromosomes.reserve(POPULATION_SIZE);
 }
 
-void population::selection(const university& university) {
+population population::selection(const university& university) {
     population new_population;
 
     chromosome a = *select_randomly(chromosomes.begin(), chromosomes.end());
     chromosome b = *select_randomly(chromosomes.begin(), chromosomes.end());
 
     new_population.add(mutation(chromosome::crossover(a, b), university));
+    return new_population;
 }
 
 bool population::is_valid() const {
@@ -234,4 +235,13 @@ const chromosome & population::get_valid_chromosome() const {
 
 void population::add(chromosome&& chromosome) {
     chromosomes.push_back(std::move(chromosome));
+}
+
+int population::get_mismatches_count() const {
+    int mismatches_count = 0;
+    for (const auto& chromosome : chromosomes) {
+        mismatches_count += chromosome.mismatches_count;
+    }
+
+    return mismatches_count;
 }

@@ -122,6 +122,8 @@ university create_university() {
             group.disciplines = {
                 DISCIPLINES::PROGRAMMING_0,
                 DISCIPLINES::PROGRAMMING_1,
+                DISCIPLINES::PROGRAMMING_2,
+                DISCIPLINES::PROGRAMMING_3,
                 DISCIPLINES::OTHER_0,
                 DISCIPLINES::OTHER_1
             };
@@ -133,6 +135,8 @@ university create_university() {
             group_data group;
             group.students_count = 20;
             group.disciplines = {
+                DISCIPLINES::PROGRAMMING_0,
+                DISCIPLINES::PROGRAMMING_1,
                 DISCIPLINES::PROGRAMMING_2,
                 DISCIPLINES::PROGRAMMING_3,
                 DISCIPLINES::OTHER_0,
@@ -190,8 +194,12 @@ int main() {
     { LOG_DURATION("POPULATION SELECTIONS")
         int iteration_count = 0;
         while (!population.is_valid() && iteration_count < MAX_ITERATION_COUNT) {
-            population.selection(university);
+            population = population.selection(university);
             iteration_count++;
+            if (iteration_count % LOG_ITERATION_COUNT == 0) {
+                std::cout << iteration_count << " ITERATIONS\n";
+                std::cout << "Mismatch sum = " << population.get_mismatches_count() << '\n';
+            }
         }
     }
 
