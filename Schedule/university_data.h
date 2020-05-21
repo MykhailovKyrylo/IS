@@ -47,10 +47,12 @@ const std::string PARA_NAMES[LESSONS_COUNT] {
 namespace university_data {
 
     enum TEACHERS {
-        KEK,
-        LOL,
-        HEH,
-        AHAH,
+        PUPSEN,
+        VUPSEN,
+        LUNTIK,
+        KUZYA,
+        MYLA,
+        PCHELONOK,
         TEACHERS_COUNT
     };
 
@@ -78,24 +80,26 @@ namespace university_data {
     enum DISCIPLINES {
         PROGRAMMING_0,
         PROGRAMMING_1,
+        PROGRAMMING_2,
+        PROGRAMMING_3,
         OTHER_0,
         OTHER_1,
-        OTHER_2,
         DISCIPLINES_COUNT
     };
 
     enum GROUPS {
         TTP_42,
         MI_4,
-        TK4,
         GROUPS_COUNT
     };
 
     const std::string TEACHERS_NAMES[TEACHERS_COUNT] {
-        "KEK",
-        "LOL",
-        "HEH",
-        "AHAH"
+        "PUPSEN",
+        "VUPSEN",
+        "LUNTIK",
+        "KUZYA",
+        "MYLA",
+        "PCHELONOK"
     };
 
     const std::string RANKS_NAMES[RANKS_COUNT] {
@@ -120,15 +124,15 @@ namespace university_data {
     const std::string DISCIPLINES_NAMES[DISCIPLINES_COUNT] {
         "PROGRAMMING_0",
         "PROGRAMMING_1",
+        "PROGRAMMING_2",
+        "PROGRAMMING_3",
         "OTHER_0",
-        "OTHER_1",
-        "OTHER_2"
+        "OTHER_1"
     };
 
     const std::string GROUPS_NAMES[GROUPS_COUNT] {
         "TTP_42",
-        "MI_4",
-        "TK4"
+        "MI_4"
     };
 
 } // university_data

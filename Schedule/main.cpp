@@ -6,19 +6,23 @@
 
 #include "university_data.h"
 #include "solution.h"
+#include "profile.h"
 
 using namespace university_data;
 
-constexpr size_t MAX_ITERATION_COUNT = 200; // 1'000'000
+constexpr size_t MAX_ITERATION_COUNT = 50'000;
+constexpr size_t LOG_ITERATION_COUNT = 1'000;
 
 university create_university() {
     university knu("Taras Shevchenko Nation University");
 
     { // adding teachers
-        knu.add_teacher(TEACHERS::KEK, {RANKS::PROFESSOR});
-        knu.add_teacher(TEACHERS::LOL, {RANKS::DOCTOR});
-        knu.add_teacher(TEACHERS::HEH, {RANKS::ASSOCIATE_PROFESSOR});
-        knu.add_teacher(TEACHERS::AHAH, {RANKS::GRADUATE_STUDENT});
+        knu.add_teacher(TEACHERS::PUPSEN, {RANKS::PROFESSOR});
+        knu.add_teacher(TEACHERS::VUPSEN, {RANKS::PROFESSOR});
+        knu.add_teacher(TEACHERS::LUNTIK, {RANKS::DOCTOR});
+        knu.add_teacher(TEACHERS::KUZYA, {RANKS::ASSOCIATE_PROFESSOR});
+        knu.add_teacher(TEACHERS::MYLA, {RANKS::GRADUATE_STUDENT});
+        knu.add_teacher(TEACHERS::PCHELONOK, {RANKS::GRADUATE_STUDENT});
     }
 
     { // adding classrooms
@@ -38,10 +42,10 @@ university create_university() {
             discipline_data discipline;
             discipline.lectures_count_per_week = 1;
             discipline.practice_count_per_week = 2;
-            discipline.lecturer = TEACHERS::KEK;
+            discipline.lecturer = TEACHERS::PUPSEN;
             discipline.practice_teachers = {
-                TEACHERS::KEK,
-                TEACHERS::LOL
+                TEACHERS::PUPSEN,
+                TEACHERS::KUZYA
             };
 
             knu.add_discipline(DISCIPLINES::PROGRAMMING_0, std::move(discipline));
@@ -51,13 +55,63 @@ university create_university() {
             discipline_data discipline;
             discipline.lectures_count_per_week = 1;
             discipline.practice_count_per_week = 2;
-            discipline.lecturer = TEACHERS::HEH;
+            discipline.lecturer = TEACHERS::VUPSEN;
             discipline.practice_teachers = {
-                TEACHERS::HEH,
-                TEACHERS::AHAH
+                TEACHERS::VUPSEN,
+                TEACHERS::KUZYA
             };
 
             knu.add_discipline(DISCIPLINES::PROGRAMMING_1, std::move(discipline));
+        }
+
+        {
+            discipline_data discipline;
+            discipline.lectures_count_per_week = 1;
+            discipline.practice_count_per_week = 2;
+            discipline.lecturer = TEACHERS::LUNTIK;
+            discipline.practice_teachers = {
+                TEACHERS::LUNTIK,
+                TEACHERS::KUZYA
+            };
+
+            knu.add_discipline(DISCIPLINES::PROGRAMMING_2, std::move(discipline));
+        }
+
+        {
+            discipline_data discipline;
+            discipline.lectures_count_per_week = 1;
+            discipline.practice_count_per_week = 2;
+            discipline.lecturer = TEACHERS::KUZYA;
+            discipline.practice_teachers = {
+                TEACHERS::PUPSEN,
+                TEACHERS::VUPSEN
+            };
+
+            knu.add_discipline(DISCIPLINES::PROGRAMMING_3, std::move(discipline));
+        }
+
+        {
+            discipline_data discipline;
+            discipline.lectures_count_per_week = 1;
+            discipline.practice_count_per_week = 1;
+            discipline.lecturer = TEACHERS::PCHELONOK;
+            discipline.practice_teachers = {
+                TEACHERS::PCHELONOK
+            };
+
+            knu.add_discipline(DISCIPLINES::OTHER_0, std::move(discipline));
+        }
+
+        {
+            discipline_data discipline;
+            discipline.lectures_count_per_week = 1;
+            discipline.practice_count_per_week = 1;
+            discipline.lecturer = TEACHERS::MYLA;
+            discipline.practice_teachers = {
+                TEACHERS::MYLA
+            };
+
+            knu.add_discipline(DISCIPLINES::OTHER_1, std::move(discipline));
         }
     }
 
@@ -67,7 +121,9 @@ university create_university() {
             group.students_count = 32;
             group.disciplines = {
                 DISCIPLINES::PROGRAMMING_0,
-                DISCIPLINES::PROGRAMMING_1
+                DISCIPLINES::PROGRAMMING_1,
+                DISCIPLINES::OTHER_0,
+                DISCIPLINES::OTHER_1
             };
 
             knu.add_group(GROUPS::TTP_42, std::move(group));
@@ -77,8 +133,10 @@ university create_university() {
             group_data group;
             group.students_count = 20;
             group.disciplines = {
-                DISCIPLINES::PROGRAMMING_0,
-                DISCIPLINES::PROGRAMMING_1
+                DISCIPLINES::PROGRAMMING_2,
+                DISCIPLINES::PROGRAMMING_3,
+                DISCIPLINES::OTHER_0,
+                DISCIPLINES::OTHER_1
             };
 
             knu.add_group(GROUPS::MI_4, std::move(group));
@@ -87,6 +145,7 @@ university create_university() {
     }
 
     knu.construct_lessons();
+    std::cout << "LESSONS COUNT = " << knu.get_lessons_count() << '\n';
 
     return knu;
 }
@@ -128,10 +187,12 @@ int main() {
 
     auto population = population::construct_randomly(university);
 
-    int iteration_count = 0;
-    while (!population.is_valid() && iteration_count < MAX_ITERATION_COUNT) {
-        population.selection(university);
-        iteration_count++;
+    { LOG_DURATION("POPULATION SELECTIONS")
+        int iteration_count = 0;
+        while (!population.is_valid() && iteration_count < MAX_ITERATION_COUNT) {
+            population.selection(university);
+            iteration_count++;
+        }
     }
 
     if (population.is_valid()) {
