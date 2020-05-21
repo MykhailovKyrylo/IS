@@ -17,7 +17,7 @@ double random_probability() {
 }
 
 size_t random_unsigned_int(size_t from, size_t to) {
-    return from + static_cast<size_t>(random_probability() * (to -from));
+    return from + static_cast<size_t>((to - from) * random_probability());
 }
 
 

@@ -105,9 +105,10 @@ void print_chromosome(const chromosome& chromosome, const university& university
         std::cout << DISCIPLINES_NAMES[lesson_data.discipline_id] << '\n';
         std::cout << lesson_type << " with " << RANKS_NAMES[university.get_teacher_rank(teacher_id)] << ' ';
         std::cout << TEACHERS_NAMES[teacher_id] << '\n';
-        std::cout << DAYS_NAMES[scheduled_lesson.day_idx] << ' ' << PARA_NAMES[scheduled_lesson.para_idx] << " lesson\n";
+        std::cout << DAYS_NAMES[scheduled_lesson.day_idx] << ' ' << PARA_NAMES[scheduled_lesson.para_idx]
+                  << " lesson\n";
         std::cout << "In " << CLASSROOMS_NAMES[classroom_id];
-        std::cout <<" (capacity = " << university.get_classroom(classroom_id).capacity << ")\n";
+        std::cout << " (capacity = " << university.get_classroom(classroom_id).capacity << ")\n";
         std::cout << '\n';
     }
 }
@@ -127,12 +128,17 @@ int main() {
 
     auto population = population::construct_randomly(university);
 
-    print_population(population, university);
+    int iteration_count = 0;
+    while (!population.is_valid() && iteration_count < MAX_ITERATION_COUNT) {
+        population.selection(university);
+        iteration_count++;
+    }
 
-//  int iteration_count = 0;
-//  while (!population.is_valid() && iteration_count < MAX_ITERATION_COUNT) {
-//    population.make_step();
-//  }
+    if (population.is_valid()) {
+        print_chromosome(population.get_valid_chromosome(), university);
+    } else {
+        std::cout << "VALID CHROMOSOME WAS NOT FOUND! SORRY!\n";
+    }
 
     return 0;
 }

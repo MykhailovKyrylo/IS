@@ -22,6 +22,6 @@ Iter select_randomly(Iter start, Iter end) {
 
 bool random_bool();
 
-size_t random_unsigned_int(size_t from, size_t to);
+double random_probability();
 
-double random_double_int(double from, double to);
+size_t random_unsigned_int(size_t from, size_t to);

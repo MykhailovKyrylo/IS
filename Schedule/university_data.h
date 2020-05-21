@@ -17,14 +17,16 @@ enum DAYS {
     DAYS_COUNT
 };
 
-enum PARA {
+enum LESSONS {
     first,
     second,
     third,
     fourth,
     fifth,
-    PARA_COUNT
+    LESSONS_COUNT
 };
+
+const size_t SLOTS_COUNT = DAYS_COUNT * LESSONS_COUNT;
 
 const std::string DAYS_NAMES[DAYS_COUNT] {
     "monday",
@@ -34,7 +36,7 @@ const std::string DAYS_NAMES[DAYS_COUNT] {
     "friday"
 };
 
-const std::string PARA_NAMES[PARA_COUNT] {
+const std::string PARA_NAMES[LESSONS_COUNT] {
     "first",
     "second",
     "third",

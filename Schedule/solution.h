@@ -17,29 +17,31 @@ struct scheduled_lesson {
 };
 
 struct chromosome {
+    static constexpr double VALID = 777;
     static chromosome construct_randomly(const university& university);
-
     static chromosome crossover(const chromosome& a, const chromosome& b);
 
+    void add(scheduled_lesson scheduled_lesson);
+    void remove(scheduled_lesson scheduled_lesson);
+    double fitness() const;
+
+    int mismatches_count{0};
     std::vector<scheduled_lesson> scheduled_lessons;
-//    std::map<std::string, std::vector<size_t>> teachers_lessons;
-//    std::map<std::string, std::vector<size_t>> classroom_lessons;
+    std::unordered_map<size_t, std::vector<int>> teachers_lessons;
+    std::unordered_map<size_t, std::vector<int>> classroom_lessons;
 };
 
 struct population {
     static population construct_randomly(const university& university);
-
-    static chromosome mutation(chromosome&&);
+    static chromosome mutation(chromosome&& chromosome, const university& university);
 
     population();
 
     void add(chromosome&& chromosome);
-
-    void mutate();
-
+    void selection(const university& university);
+    bool is_valid() const;
+    const chromosome& get_valid_chromosome() const;
     const std::vector<chromosome> get_chromosomes;
 
     std::vector<chromosome> chromosomes;
 };
-
-

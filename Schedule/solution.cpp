@@ -5,10 +5,19 @@
 #include "solution.h"
 #include "random_utils.h"
 
-constexpr size_t POPULATION_SIZE = 2;
+constexpr size_t POPULATION_SIZE = 100;
+constexpr double MUTATION_PROBABILITY = 0.02;
+
+size_t generate_random_day() {
+    return random_unsigned_int(DAYS::monday, DAYS::friday);
+}
+
+size_t generate_random_lesson() {
+    return random_unsigned_int(LESSONS::first, LESSONS::fifth);
+}
 
 scheduled_lesson scheduled_lesson::crossover(const scheduled_lesson& a, const scheduled_lesson& b) {
-    scheduled_lesson crossed_scheduled_lesson;
+    scheduled_lesson crossed_scheduled_lesson {};
 
     crossed_scheduled_lesson.day_idx = random_bool() ? a.day_idx : b.day_idx;
     crossed_scheduled_lesson.para_idx = random_bool() ? a.para_idx : b.para_idx;
@@ -28,16 +37,19 @@ chromosome chromosome::construct_randomly(const university& university) {
         const auto& lesson = university.get_lesson(lesson_idx);
         auto students_count = university.get_group(lesson.group_id).students_count;
 
-        auto& scheduled_lesson = random_chromosome.scheduled_lessons.emplace_back();
+        scheduled_lesson random_scheduled_lesson {};
 
-        scheduled_lesson.day_idx = random_unsigned_int(DAYS::monday, DAYS::friday);
-        scheduled_lesson.para_idx = random_unsigned_int(PARA::first, PARA::fifth);
+        random_scheduled_lesson.day_idx = generate_random_day();
+        random_scheduled_lesson.para_idx = generate_random_lesson();
 
-        scheduled_lesson.teacher_id =
+        random_scheduled_lesson.teacher_id =
             (lesson.is_practice) ? university.get_random_practice_teacher(lesson.discipline_id) :
             university.get_lecturer(lesson.discipline_id);
 
-        scheduled_lesson.classroom_id = university.get_random_classroom(students_count);
+        random_scheduled_lesson.classroom_id = university.get_random_classroom(students_count);
+
+        random_chromosome.scheduled_lessons.push_back(random_scheduled_lesson);
+        random_chromosome.add(random_scheduled_lesson);
     }
 
     return random_chromosome;
@@ -55,6 +67,51 @@ chromosome chromosome::crossover(const chromosome& a, const chromosome& b) {
     return crossed_chromosome;
 }
 
+void chromosome::add(scheduled_lesson scheduled_lesson) {
+    const size_t day_and_para_idx = scheduled_lesson.day_idx * LESSONS_COUNT + scheduled_lesson.para_idx;
+
+    auto teacher_id = scheduled_lesson.teacher_id;
+    if (!teachers_lessons.count(teacher_id)) {
+        teachers_lessons.insert({teacher_id, std::vector<int>(SLOTS_COUNT, 0)});
+    }
+    if (teachers_lessons[teacher_id][day_and_para_idx]) {
+        mismatches_count++;
+    }
+    teachers_lessons[teacher_id][day_and_para_idx]++;
+
+    auto classroom_id = scheduled_lesson.classroom_id;
+    if (!classroom_lessons.count(classroom_id)) {
+        classroom_lessons.insert({classroom_id, std::vector<int>(SLOTS_COUNT, 0)});
+    }
+    if (classroom_lessons[classroom_id][day_and_para_idx]) {
+        mismatches_count++;
+    }
+    classroom_lessons[classroom_id][day_and_para_idx]++;
+}
+
+void chromosome::remove(scheduled_lesson scheduled_lesson) {
+    const size_t day_and_para_idx = scheduled_lesson.day_idx * LESSONS_COUNT + scheduled_lesson.para_idx;
+
+    auto teacher_id = scheduled_lesson.teacher_id;
+    teachers_lessons[teacher_id][day_and_para_idx]--;
+    if (teachers_lessons[teacher_id][day_and_para_idx] > 0) {
+        mismatches_count--;
+    }
+
+    auto classroom_id = scheduled_lesson.classroom_id;
+    classroom_lessons[classroom_id][day_and_para_idx]--;
+    if (classroom_lessons[classroom_id][day_and_para_idx] > 0) {
+        mismatches_count--;
+    }
+}
+
+double chromosome::fitness() const {
+    if (mismatches_count == 0) {
+        return VALID;
+    }
+    return 1. / mismatches_count;
+}
+
 population population::construct_randomly(const university& university) {
     population random_population;
 
@@ -65,21 +122,80 @@ population population::construct_randomly(const university& university) {
     return random_population;
 }
 
-chromosome population::mutation(chromosome&&) {
-    // simple logic
+chromosome population::mutation(chromosome&& chromosome, const university& university) {
+    if (chromosome.fitness() == chromosome::VALID) {
+        return chromosome;
+    }
+
+    for (size_t lesson_idx = 0; lesson_idx < university.get_lessons_count(); lesson_idx++) {
+        auto lesson_data = university.get_lesson(lesson_idx);
+        auto mutated_scheduled_lesson = chromosome.scheduled_lessons[lesson_idx];
+
+        bool mutated = false;
+
+        if (random_probability() < MUTATION_PROBABILITY) {
+            mutated_scheduled_lesson.day_idx = generate_random_day();
+            mutated = true;
+        }
+
+        if (random_probability() < MUTATION_PROBABILITY) {
+            mutated_scheduled_lesson.para_idx = generate_random_lesson();
+            mutated = true;
+        }
+
+        if (random_probability() < MUTATION_PROBABILITY) {
+            auto students_count = university.get_group(lesson_data.group_id).students_count;
+            mutated_scheduled_lesson.classroom_id = university.get_random_classroom(students_count);
+            mutated = true;
+        }
+
+        if (random_probability() < MUTATION_PROBABILITY) {
+            if (lesson_data.is_practice) {
+                mutated_scheduled_lesson.teacher_id = university.get_random_practice_teacher(lesson_data.discipline_id);
+            } else {
+                mutated_scheduled_lesson.teacher_id = university.get_lecturer(lesson_data.discipline_id);
+            }
+            mutated = true;
+        }
+
+        if (mutated) {
+            chromosome.remove(chromosome.scheduled_lessons[lesson_idx]);
+            chromosome.add(mutated_scheduled_lesson);
+        }
+    }
+
+    return chromosome;
 }
 
 population::population() {
     chromosomes.reserve(POPULATION_SIZE);
 }
 
-void population::mutate() {
+void population::selection(const university& university) {
     population new_population;
 
     chromosome a = *select_randomly(chromosomes.begin(), chromosomes.end());
     chromosome b = *select_randomly(chromosomes.begin(), chromosomes.end());
 
-    new_population.add(mutation(chromosome::crossover(a, b)));
+    new_population.add(mutation(chromosome::crossover(a, b), university));
+}
+
+bool population::is_valid() const {
+    for (const auto& chromosome : chromosomes) {
+        if (chromosome.fitness() == chromosome::VALID) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+const chromosome & population::get_valid_chromosome() const {
+    for (const auto& chromosome : chromosomes) {
+        if (chromosome.fitness() == chromosome::VALID) {
+            return chromosome;
+        }
+    }
 }
 
 void population::add(chromosome&& chromosome) {
